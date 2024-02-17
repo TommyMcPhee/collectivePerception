@@ -17,22 +17,24 @@ void ofApp::audioSetup() {
 	nyquist = (float)sampleRate * 0.5;
 	frequencyIncrement = 10.0 / nyquist;
 	fundamentalFrequency = (float)frameRate / 9.0;
-	ratio = 9.0;
 	frequencyA = fundamentalFrequency;
 	frequencyB = fundamentalFrequency * 4.0;
 	frequencyC = fundamentalFrequency * 7.0;
+	ratio = 9.0;
 	redLFO = sinOsc(fundamentalFrequency / 40.0, 0.0, 1.0, sampleRate);
 	greenLFO = sinOsc(fundamentalFrequency / 70.0, 0.0, 1.0, sampleRate);
 	blueLFO = sinOsc(fundamentalFrequency / 100.0, 0.0, 1.0, sampleRate);
 	modulatorA = sinOsc(frequencyA * ratio, 0.0, 1.0, sampleRate);
 	modulatorB = sinOsc(frequencyB * ratio * 4.0, 0.0, 1.0, sampleRate);
 	modulatorC = sinOsc(frequencyC * ratio, 0.0, 1.0, sampleRate);
-	carrierA = sinOsc(frequencyA, 0.0, 1.0, sampleRate);
-	carrierB = sinOsc(frequencyB, 0.0, 1.0, sampleRate);
-	carrierC = sinOsc(frequencyC, 0.0, 1.0, sampleRate);
-	indexA = 40.0;
-	indexB = 40.0;
-	indexC = 40.0;
+	for (int a = 0; a < 2; a++) {
+		carrierA[a] = sinOsc(frequencyA, 0.0, 1.0, sampleRate);
+		carrierB[a] = sinOsc(frequencyB, 0.0, 1.0, sampleRate);
+		carrierC[a] = sinOsc(frequencyC, 0.0, 1.0, sampleRate);
+		indexA[a] = 40.0;
+		indexB[a] = 40.0;
+		indexC[a] = 40.0;
+	}
 }
 
 void ofApp::ofSoundStreamSetup(ofSoundStreamSettings &settings) {

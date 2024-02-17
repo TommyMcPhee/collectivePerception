@@ -29,9 +29,9 @@ class ofApp : public ofBaseApp{
 		sinOsc modulatorA;
 		sinOsc modulatorB;
 		sinOsc modulatorC;
-		sinOsc carrierA;
-		sinOsc carrierB;
-		sinOsc carrierC;
+		array<sinOsc, 2> carrierA;
+		array<sinOsc, 2> carrierB;
+		array<sinOsc, 2> carrierC;
 		const int sampleRate = 48000;
 		const int bufferSize = 256;
 		const int channels = 2;
@@ -45,9 +45,9 @@ class ofApp : public ofBaseApp{
 		float frequencyA;
 		float frequencyB;
 		float frequencyC;
-		float indexA;
-		float indexB;
-		float indexC;
+		array<float, 2> indexA;
+		array<float, 2> indexB;
+		array<float, 2> indexC;
 		float redSample;
 		float greenSample;
 		float blueSample;
