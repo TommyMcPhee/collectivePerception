@@ -117,9 +117,9 @@ class ofApp : public ofBaseApp{
 		ofVec3f amplitude;
 		ofVec3f x;
 		ofVec3f y;
-		ofVec2f ab;
-		ofVec2f ac;
-		ofVec2f bc;
+		ofVec4f ab;
+		ofVec4f ac;
+		ofVec4f bc;
 		ofVec2f abc;
 
 		ofstream wavFile;

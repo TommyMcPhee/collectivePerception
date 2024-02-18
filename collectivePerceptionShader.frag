@@ -1,7 +1,8 @@
 #version 150
 
+uniform sampler2DRect tex0;
+in vec2 texCoordVarying;
 out vec4 outputColor;
-
 uniform vec2 window;
 uniform vec3 index;
 uniform vec3 frequency;
@@ -35,26 +36,33 @@ float oscillate(vec2 twoPiNormalized, float _frequency, float _index, float _amp
 }
 
 vec2 modulate(float a, float b, float index){
-    return mix(vec2(a, b), vec2(a * b), index);
+    return mix(vec2(a, b), vec2(pow(a * b, 0.25)), index);
 }
 
 float distribute(vec2 xy, vec2 normalized){
-    return mix(mix(1.0 - normalized.x, normalized.x, xy.x), mix(1.0 - normalized.y, normalized.y, xy.y), 0.5);
+    return pow(mix(1.0 - normalized.x, normalized.x, xy.x) * mix(1.0 - normalized.y, normalized.y, xy.y), 0.25);
+    //return 1.0;
 }
 
 void main()
 { 
+    vec4 old = texture2DRect(tex0, texCoordVarying);
+    //vec3 filter = vec3(mix(old.rgb, 1.0 - old.rgb, 0.7));
     vec2 normalized = gl_FragCoord.xy / window;
     float pi = radians(180.0);
     vec2 twoPiNormalized = normalized * 2.0 * pi - vec2(pi, pi);
     float red = oscillate(twoPiNormalized, frequency.r, index.r, amplitude.r) * distribute(vec2(x.r, y.r), normalized);
     float green = oscillate(twoPiNormalized, frequency.g, index.g, amplitude.g) * distribute(vec2(x.g, y.g), normalized);
     float blue = oscillate(twoPiNormalized, frequency.b, index.b, amplitude.b) * distribute(vec2(x.g, y.b), normalized);
+    //float filteredRed = mix(red * old.r, red + old.r, 0.25);
+    //float filteredGreen = mix(green * old.g, green + old.g, 0.25);
+    //float filteredBlue = mix(blue * old.b, blue + old.b, 0.25);
     vec2 redGreen = modulate(red, green, ab.z) * distribute(ab.xy, normalized) * ab.w;
     vec2 redBlue = modulate(red, blue, ac.z) * distribute(ac.xy, normalized) * ac.w;
     vec2 greenBlue = modulate(green, blue, bc.z) * distribute(bc.xy, normalized) * bc.w;
-    vec3 color = vec3(mix(redGreen.x, redBlue.x, 0.5), mix(redGreen.y, greenBlue.x, 0.5), mix(redBlue.y, greenBlue.y, 0.5)) * distribute(abc, normalized);
-    outputColor = vec4(newColor, 1.0);
+    vec3 new = vec3(redGreen.x * redBlue.x, redGreen.y * greenBlue.x, redBlue.y * greenBlue.y) * distribute(abc, normalized);
+    //outputColor = vec4(mix(filter * new, filter + new, 0.25), 1.0);
+    outputColor = vec4(new, 1.0);
     
     //outputColor = vec4(1.0, 0.0, 0.0, 1.0);
 }

@@ -15,8 +15,8 @@ void ofApp::audioSetup() {
 	settings.setApi(ofSoundDevice::Api::MS_DS);
 	stream.setup(settings);
 	nyquist = (float)sampleRate * 0.5;
-	frequencyIncrement = 100.0 / nyquist;
-	lowFrequencyIncrement = frequencyIncrement;
+	frequencyIncrement = 81.0 / nyquist;
+	lowFrequencyIncrement = frequencyIncrement / 1000.0;
 	fundamentalFrequency = (float)frameRate / 9.0;
 	frequencyA = fundamentalFrequency;
 	frequencyB = fundamentalFrequency * 4.0;
@@ -56,7 +56,7 @@ void ofApp::videoSetup() {
 }
 
 void ofApp::audioOut(ofSoundBuffer& audioBuffer) {
-	cout << lowFrequencyIncrement << endl;
+	cout << lowFrequencyA << endl;
 	for (int a = 0; a < audioBuffer.getNumFrames(); a++) {
 		renderSample();
 		for (int b = 0; b < 2; b++) {
@@ -73,12 +73,10 @@ void ofApp::renderSample() {
 	frequencyA += frequencyIncrement;
 	frequencyB += frequencyIncrement;
 	frequencyC += frequencyIncrement;
-	/*
+	float lowPass = pow(frequencyA / nyquist, 0.25);
 	if (frequencyA > nyquist) {
-		cout << "done" << endl;
 		exit();
 	}
-	*/
 	redLFO.setFreq(lowFrequencyA);
 	greenLFO.setFreq(lowFrequencyB);
 	blueLFO.setFreq(lowFrequencyC);
@@ -149,8 +147,10 @@ void ofApp::renderSample() {
 	sampleAC[1] = modulateTwo(carrierASample[1], carrierCSample[1], right(acRing, acRingPan), right(acAmplitude, acPan));
 	sampleBC[0] = modulateTwo(carrierBSample[0], carrierCSample[0], left(bcRing, bcRingPan), left(bcAmplitude, bcPan));
 	sampleBC[1] = modulateTwo(carrierBSample[1], carrierCSample[1], right(bcRing, bcRingPan), right(bcAmplitude, bcPan));
-	sample[0] = modulateTwo(modulateThree(sampleAB[0], sampleAC[0], sampleBC[0], left(ring, ringPan)), sample[0], left(filterRing, filterRingPan), left(filterAmplitude, filterPan));
-	sample[1] = modulateTwo(modulateThree(sampleAB[1], sampleAC[1], sampleBC[1], right(ring, ringPan)), sample[1], left(filterRing, filterRingPan), left(filterAmplitude, filterPan));
+	//sample[0] = modulateTwo(modulateThree(sampleAB[0], sampleAC[0], sampleBC[0], left(ring, ringPan)), sample[0], left(filterRing, filterRingPan), left(filterAmplitude, filterPan));
+	//sample[1] = modulateTwo(modulateThree(sampleAB[1], sampleAC[1], sampleBC[1], right(ring, ringPan)), sample[1], left(filterRing, filterRingPan), left(filterAmplitude, filterPan));
+	sample[0] = modulateThree(sampleAB[0], sampleAC[0], sampleBC[0], left(ring, ringPan)) + (lastSample[0] * lowPass) / (1.0 + lowPass);
+	sample[1] = modulateThree(sampleAB[1], sampleAC[1], sampleBC[1], right(ring, ringPan)) + (lastSample[1] * lowPass) / (1.0 + lowPass);
 }
 
 inline float ofApp::unipolar(float input) {
@@ -209,6 +209,18 @@ void ofApp::setUniforms() {
 	shader.setUniform3f("frequency", frequency);
 	amplitude.set(redSample, greenSample, blueSample);
 	shader.setUniform3f("amplitude", amplitude);
+	x.set(carrierAPan, carrierBPan, carrierCPan);
+	shader.setUniform3f("x", x);
+	y.set(abs(modulatorAPan - carrierAPan), (modulatorBPan - carrierBPan), (modulatorCPan - carrierCPan));
+	shader.setUniform3f("y", y);
+	ab.set(abPan, abs(abPan - abRingPan), abRing, abAmplitude);
+	shader.setUniform4f("ab", ab);
+	ac.set(acPan, abs(acPan - acRingPan), acRing, acAmplitude);
+	shader.setUniform4f("ac", ac);
+	bc.set(bcPan, abs(bcPan - bcRingPan), bcRing, bcAmplitude);
+	shader.setUniform4f("bc", bc);
+	abc.set(ring, ringPan);
+	shader.setUniform2f("abc", abc);
 }
 
 float ofApp::scaleFrequency(float input) {
