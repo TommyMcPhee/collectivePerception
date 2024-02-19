@@ -15,7 +15,7 @@ void ofApp::audioSetup() {
 	settings.setApi(ofSoundDevice::Api::MS_DS);
 	stream.setup(settings);
 	nyquist = (float)sampleRate * 0.5;
-	frequencyIncrement = 72.0 / nyquist;
+	frequencyIncrement = (ofRandomf() * 10.0 + 68.5) / nyquist;
 	lowFrequencyIncrement = frequencyIncrement / 1000.0;
 	fundamentalFrequency = (float)frameRate / 9.0;
 	frequencyA = fundamentalFrequency;
@@ -72,6 +72,7 @@ void ofApp::audioOut(ofSoundBuffer& audioBuffer) {
 			lastSampleAC[b] = sampleAC[b];
 			lastSampleBC[b] = sampleBC[b];
 			lastSample[b] = sample[b];
+			recordSample(b);
 		}
 	}
 }
@@ -254,8 +255,7 @@ inline float ofApp::averageThree(float inputA, float inputB, float inputC) {
 inline float ofApp::filter(float z1, float z0, float lowRing, float lowPass, float highRing, float highPass) {
 	lowPass = pow(lowPass, progress * progress);
 	highPass = pow(highPass, progress);
-	float unamplified = averageTwo(modulateTwo(z1, z0, lowRing, lowPass), modulateTwo(z1, -1.0 * z0, highRing, highPass));
-	return ofSign(unamplified) * pow(abs(unamplified), 0.75);
+	return averageTwo(modulateTwo(z1, z0, lowRing, lowPass), modulateTwo(z1, -1.0 * z0, highRing, highPass));
 }
 
 //--------------------------------------------------------------
