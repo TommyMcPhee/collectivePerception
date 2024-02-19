@@ -9,6 +9,7 @@ class ofApp : public ofBaseApp{
 	public:
 		void setup();
 		void audioSetup();
+		float randomPhase();
 		void videoSetup();
 		void ofSoundStreamSetup(ofSoundStreamSettings& settings);
 		void audioOut(ofSoundBuffer &audioBuffer);
@@ -100,7 +101,10 @@ class ofApp : public ofBaseApp{
 		array<float, 2> sampleAC;
 		array<float, 2> sampleBC;
 		array<float, 2> sample;
-		array<float, 2> lastSample;
+		array<float, 2> lastSample = { 0.0, 0.0 };
+
+		float lowPass;
+
 		float filterRingPan = 0.5;
 		float filterRing = 0.7;
 		float filterPan = 0.5;

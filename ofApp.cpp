@@ -25,9 +25,9 @@ void ofApp::audioSetup() {
 	lowFrequencyB = frequencyB;
 	lowFrequencyC = frequencyC;
 	ratio = 9.0;
-	redLFO = sinOsc(fundamentalFrequency / 100.0, 0.0, 1.0, sampleRate);
-	greenLFO = sinOsc(fundamentalFrequency * 4.0 / 100.0, 0.0, 1.0, sampleRate);
-	blueLFO = sinOsc(fundamentalFrequency * 7.0/ 100.0, 0.0, 1.0, sampleRate);
+	redLFO = sinOsc(fundamentalFrequency / 100.0, randomPhase(), 1.0, sampleRate);
+	greenLFO = sinOsc(fundamentalFrequency * 4.0 / 100.0, randomPhase(), 1.0, sampleRate);
+	blueLFO = sinOsc(fundamentalFrequency * 7.0/ 100.0, randomPhase(), 1.0, sampleRate);
 	modulatorA = sinOsc(frequencyA * ratio, 0.0, 1.0, sampleRate);
 	modulatorB = sinOsc(frequencyB * ratio * 4.0, 0.0, 1.0, sampleRate);
 	modulatorC = sinOsc(frequencyC * ratio, 0.0, 1.0, sampleRate);
@@ -39,6 +39,10 @@ void ofApp::audioSetup() {
 		indexB[a] = 40.0;
 		indexC[a] = 40.0;
 	}
+}
+
+float ofApp::randomPhase() {
+	return ofRandomf() * TWO_PI;
 }
 
 void ofApp::ofSoundStreamSetup(ofSoundStreamSettings &settings) {
@@ -56,7 +60,7 @@ void ofApp::videoSetup() {
 }
 
 void ofApp::audioOut(ofSoundBuffer& audioBuffer) {
-	cout << lowFrequencyA << endl;
+	cout << sample[0] << endl;
 	for (int a = 0; a < audioBuffer.getNumFrames(); a++) {
 		renderSample();
 		for (int b = 0; b < 2; b++) {
@@ -73,7 +77,7 @@ void ofApp::renderSample() {
 	frequencyA += frequencyIncrement;
 	frequencyB += frequencyIncrement;
 	frequencyC += frequencyIncrement;
-	float lowPass = pow(frequencyA / nyquist, 0.25);
+	lowPass = pow(frequencyA / nyquist, 0.25);
 	if (frequencyA > nyquist) {
 		exit();
 	}
@@ -149,8 +153,8 @@ void ofApp::renderSample() {
 	sampleBC[1] = modulateTwo(carrierBSample[1], carrierCSample[1], right(bcRing, bcRingPan), right(bcAmplitude, bcPan));
 	//sample[0] = modulateTwo(modulateThree(sampleAB[0], sampleAC[0], sampleBC[0], left(ring, ringPan)), sample[0], left(filterRing, filterRingPan), left(filterAmplitude, filterPan));
 	//sample[1] = modulateTwo(modulateThree(sampleAB[1], sampleAC[1], sampleBC[1], right(ring, ringPan)), sample[1], left(filterRing, filterRingPan), left(filterAmplitude, filterPan));
-	sample[0] = modulateThree(sampleAB[0], sampleAC[0], sampleBC[0], left(ring, ringPan)) + (lastSample[0] * lowPass) / (1.0 + lowPass);
-	sample[1] = modulateThree(sampleAB[1], sampleAC[1], sampleBC[1], right(ring, ringPan)) + (lastSample[1] * lowPass) / (1.0 + lowPass);
+	sample[0] = (modulateThree(sampleAB[0], sampleAC[0], sampleBC[0], left(ring, ringPan)) + (lastSample[0] * lowPass)) / (1.0 + lowPass);
+	sample[1] = (modulateThree(sampleAB[1], sampleAC[1], sampleBC[1], right(ring, ringPan)) + (lastSample[1] * lowPass)) / (1.0 + lowPass);
 }
 
 inline float ofApp::unipolar(float input) {
@@ -170,7 +174,7 @@ inline float ofApp::modulateTwo(float inputA, float inputB, float ring, float am
 }
 
 inline float ofApp::modulateThree(float inputA, float inputB, float inputC, float ring) {
-	return inputA * inputB * inputC * ring + averageThree(inputA, inputB, inputC) / (1.0 + (1.0 - ring));
+	return (inputA * inputB * inputC * ring + averageThree(inputA, inputB, inputC)) / (1.0 + (1.0 - ring));
 }
 
 inline float ofApp::averageTwo(float inputA, float inputB) {
@@ -178,7 +182,7 @@ inline float ofApp::averageTwo(float inputA, float inputB) {
 }
 
 inline float ofApp::averageThree(float inputA, float inputB, float inputC) {
-	return (inputA + inputB + inputC) / 2.0;
+	return (inputA + inputB + inputC) / 3.0;
 }
 
 //--------------------------------------------------------------
@@ -224,7 +228,7 @@ void ofApp::setUniforms() {
 }
 
 float ofApp::scaleFrequency(float input) {
-	return input / (fundamentalFrequency * 9.0);
+	return pow(input * width * height / nyquist, 0.125);
 }
 
 void ofApp::setupWav() {
