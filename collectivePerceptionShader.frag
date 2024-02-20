@@ -29,12 +29,12 @@ uniform vec4 greenBlueHigh;
 uniform vec4 low;
 uniform vec4 high;
 
-float unipolar(float input){
-    return input * 0.5 + 0.5;
+float unipolar(float a){
+    return a * 0.5 + 0.5;
 }
 
-float bipolar(float input){
-    return (input - 0.5) * 2.0;
+float bipolar(float a){
+    return (a - 0.5) * 2.0;
 }
 
 float oscillate(vec2 twoPiNormalized, float _frequency, float _index, float _amplitude){
@@ -62,7 +62,7 @@ float pan(float x, float normalizedX){
     return pow(1.0 - abs(x - normalizedX), 0.5);
 }
 
-float filter(float z1, float z0, vec4 lowParameters, vec4 highParameters, float normalizedX){
+float pass(float z1, float z0, vec4 lowParameters, vec4 highParameters, float normalizedX){
     float inverseZ = 1.0 - z0;
     float lowPass = mix(mix(z1 * z0 * pan(lowParameters.x, normalizedX), mix(z1, z0, 0.5) * pan(lowParameters.z, normalizedX), lowParameters.y), z1, lowParameters.w);
     float highPass = mix(mix(z1 * inverseZ * pan(highParameters.x, normalizedX), mix(z1, inverseZ, 0.5) * pan(highParameters.z, normalizedX), highParameters.y), z1, highParameters.w);
@@ -81,17 +81,17 @@ void main()
     float redMix = oscillate(twoPiNormalized, frequency.r, index.r, carrier.r) * distribute(vec2(x.r, y.r), normalized, decenterFloat);
     float greenMix = oscillate(twoPiNormalized, frequency.g, index.g, carrier.g) * distribute(vec2(x.g, y.g), normalized, decenterFloat);
     float blueMix = oscillate(twoPiNormalized, frequency.b, index.b, carrier.b) * distribute(vec2(x.g, y.b), normalized, decenterFloat);
-    float red = filter(redMix, last.r, redLow, redHigh, normalized.x);
-    float green = filter(greenMix, last.g, greenLow, greenHigh, normalized.x);
-    float blue = filter(blueMix, last.b, blueLow, blueHigh, normalized.x);
+    float red = pass(redMix, last.r, redLow, redHigh, normalized.x);
+    float green = pass(greenMix, last.g, greenLow, greenHigh, normalized.x);
+    float blue = pass(blueMix, last.b, blueLow, blueHigh, normalized.x);
     vec2 redGreenMix = abs(modulate(red, green, ab.z) * distribute(ab.xy, normalized, decenterFloat) * ab.w);
     vec2 redBlueMix = abs(modulate(red, blue, ac.z) * distribute(ac.xy, normalized, decenterFloat) * ac.w);
     vec2 greenBlueMix = abs(modulate(green, blue, bc.z) * distribute(bc.xy, normalized, decenterFloat) * bc.w);  
-    vec2 redGreen = vec2(filter(redGreenMix.x, last.r, redGreenLow, redGreenHigh, normalized.x), filter(redGreenMix.x, last.g, redGreenLow, redGreenHigh, normalized.x)) - vec2(blue);
-    vec2 redBlue = vec2(filter(redBlueMix.x, last.r, redBlueLow, redBlueHigh, normalized.x), filter(redBlueMix.y, last.b, redBlueLow, redBlueHigh, normalized.x)) - vec2(green);
-    vec2 greenBlue = vec2(filter(greenBlueMix.x, last.g, greenBlueLow, greenBlueHigh, normalized.x), filter(greenBlueMix.y, last.b, greenBlueLow, greenBlueHigh, normalized.x)) - vec2(red);
+    vec2 redGreen = vec2(pass(redGreenMix.x, last.r, redGreenLow, redGreenHigh, normalized.x), pass(redGreenMix.x, last.g, redGreenLow, redGreenHigh, normalized.x)) - vec2(blue);
+    vec2 redBlue = vec2(pass(redBlueMix.x, last.r, redBlueLow, redBlueHigh, normalized.x), pass(redBlueMix.y, last.b, redBlueLow, redBlueHigh, normalized.x)) - vec2(green);
+    vec2 greenBlue = vec2(pass(greenBlueMix.x, last.g, greenBlueLow, greenBlueHigh, normalized.x), pass(greenBlueMix.y, last.b, greenBlueLow, greenBlueHigh, normalized.x)) - vec2(red);
     vec3 new = vec3(redGreen.x * redBlue.x, redGreen.y * greenBlue.x, redBlue.y * greenBlue.y) * distribute(abc, normalized, decenterFloat);
-    vec3 filtered = vec3(filter(new.r, last.r, low, high, normalized.x), filter(new.g, last.g, low, high, normalized.x), filter(new.b, last.b, low, high, normalized.x));
+    vec3 filtered = vec3(pass(new.r, last.r, low, high, normalized.x), pass(new.g, last.g, low, high, normalized.x), pass(new.b, last.b, low, high, normalized.x));
     vec3 white = vec3(filtered.r * filtered.g * filtered.b);
     vec3 nonWhite = 1.0 - white;
     vec3 grey = white * nonWhite;
@@ -105,7 +105,7 @@ void main()
     float filterPower = 0.11;
     vec3 lastFilter = vec3(pow(last.r, filterPower), pow(last.g, filterPower), pow(last.b, filterPower));
     vec3 processed = colorFilter * mix(nonWhite * filtered, lastFilter * extraFilter * pow(decenterFloat, 2.0) * pow(normalized.y, 3.0), pow(1.0 - sin(progress * pi), 0.0625));
-    vec3 color = mix(processed, last, 0.33);
+    vec3 color = processed;
     float colorPower = 0.33;
     outputColor = vec4(pow(color.r, colorPower), pow(color.g, colorPower), pow(color.b, colorPower), 1.0);
 }
